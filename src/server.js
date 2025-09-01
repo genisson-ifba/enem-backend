@@ -23,15 +23,40 @@ await fastify.register(import('@fastify/rate-limit'), {
   timeWindow: parseInt(process.env.RATE_LIMIT_WINDOW) || 900000 // 15 minutes
 })
 
-// CORS - Configurado via variáveis de ambiente
+// CORS - Allow Vercel deployments and localhost
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001', 'https://localhost:3000', 'https://localhost:3001']
+  : [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'https://localhost:3000',
+    'https://localhost:3001'
+  ]
 
-await fastify.register(import('@fastify/cors'), {
-  origin: allowedOrigins,
-  credentials: true
-})
+// In production, also allow any Vercel deployment
+const corsOptions = process.env.NODE_ENV === 'production' 
+  ? {
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true)
+        
+        // Allow configured origins
+        if (allowedOrigins.includes(origin)) return callback(null, true)
+        
+        // Allow any vercel.app deployment
+        if (origin.endsWith('.vercel.app')) return callback(null, true)
+        
+        // Reject others
+        callback(new Error('Not allowed by CORS'))
+      },
+      credentials: true
+    }
+  : {
+      origin: allowedOrigins,
+      credentials: true
+    }
+
+await fastify.register(import('@fastify/cors'), corsOptions)
 
 // Static Files with Caching
 await fastify.register(import('@fastify/static'), {
