@@ -26,7 +26,7 @@ await fastify.register(import('@fastify/rate-limit'), {
 // CORS - Configurado via variáveis de ambiente
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:3000', 'https://localhost:3000']
+  : ['http://localhost:3000', 'http://localhost:3001', 'https://localhost:3000', 'https://localhost:3001']
 
 await fastify.register(import('@fastify/cors'), {
   origin: allowedOrigins,

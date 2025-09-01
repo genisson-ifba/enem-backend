@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync, accessSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { marked } from 'marked'
@@ -97,7 +97,25 @@ async function questionRoutes(fastify, options) {
   fastify.get('/exams/:year/questions/:questionId', async (request, reply) => {
     try {
       const { year, questionId } = request.params
-      const questionPath = join(__dirname, `../data/public/exams/${year}/questions/${questionId}/details.json`)
+      const { language } = request.query
+      
+      let questionPath
+      if (language) {
+        // Try language-specific path first
+        questionPath = join(__dirname, `../data/public/exams/${year}/questions/${questionId}-${language}/details.json`)
+        
+        // Check if language-specific file exists
+        try {
+          accessSync(questionPath)
+        } catch {
+          // Fall back to regular path if language-specific doesn't exist
+          questionPath = join(__dirname, `../data/public/exams/${year}/questions/${questionId}/details.json`)
+        }
+      } else {
+        // Default path when no language specified
+        questionPath = join(__dirname, `../data/public/exams/${year}/questions/${questionId}/details.json`)
+      }
+      
       const questionData = readFileSync(questionPath, 'utf-8')
       const question = JSON.parse(questionData)
       
